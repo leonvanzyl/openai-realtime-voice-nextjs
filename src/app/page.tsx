@@ -1,33 +1,15 @@
 "use client";
 
-import { useChat } from "@/hooks/useChat";
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
-import { useCallback } from "react";
 import Image from "next/image";
 
 export default function Home() {
-  const {
-    isConnected,
-    isConnecting,
-    error,
-    transcript,
-    connect,
-    disconnect,
-    sendMessage,
-  } = useChat();
-
-  const startConversation = useCallback(() => {
-    connect();
-    // Start the conversation with initial instructions
-    sendMessage({
-      type: "response.create",
-      response: {
-        modalities: ["text"],
-        instructions:
-          "You are a helpful AI assistant. Let's have a conversation.",
-      },
-    });
-  }, [connect, sendMessage]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<string | null>(null);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 gap-4">
@@ -60,11 +42,11 @@ export default function Home() {
 
       <div className="flex gap-4">
         {!isConnected ? (
-          <Button onClick={startConversation} disabled={isConnecting}>
+          <Button onClick={() => {}} disabled={isConnecting}>
             {isConnecting ? "Connecting..." : "Start Conversation"}
           </Button>
         ) : (
-          <Button onClick={disconnect} variant="destructive">
+          <Button onClick={() => {}} variant="destructive">
             End Conversation
           </Button>
         )}
