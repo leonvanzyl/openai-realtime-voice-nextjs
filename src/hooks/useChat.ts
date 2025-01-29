@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { executeTool } from "@/lib/tools";
 
 export const useChat = () => {
   // Separate state management
@@ -64,20 +65,47 @@ export const useChat = () => {
 
       dataChannel.current =
         peerConnection.current.createDataChannel("oai-events");
-      dataChannel.current.onmessage = (e) => {
+      dataChannel.current.onmessage = async (e) => {
         const event = JSON.parse(e.data);
         console.log("Received event:", event);
 
-        // Clear transcript when a new response starts
-        if (event.type === "response.created") {
-          setTranscript("");
-        }
-        // Handle audio transcript deltas for transcript
-        else if (event.type === "response.audio_transcript.delta") {
-          setTranscript((prev) => prev + event.delta);
-        } else if (event.type === "response.audio_transcript.done") {
-          // Optionally handle the complete transcript if needed
-          // setTranscript(event.transcript);
+        switch (event.type) {
+          case "response.created":
+            setTranscript("");
+            break;
+          case "response.audio_transcript.delta":
+            setTranscript((prev) => prev + event.delta);
+            break;
+
+          case "response.function_call_arguments.done":
+            const functionName = event.name;
+            const callId = event.call_id;
+            const args = JSON.parse(event.arguments);
+            console.log("Function name:", functionName);
+
+            // Execute the tool and send the response
+            const toolResponse = await executeTool(functionName, args, callId);
+
+            if (toolResponse) {
+              dataChannel.current?.send(JSON.stringify(toolResponse));
+
+              // Create a new response after tool execution
+              const responseCreate = {
+                type: "response.create",
+              };
+              dataChannel.current?.send(JSON.stringify(responseCreate));
+            }
+            break;
+
+          case "invalid_request_error":
+            const responseCreate = {
+              type: "response.create",
+              response: {
+                instructions: "Oh no, something went wrong.",
+              },
+            };
+            dataChannel.current?.send(JSON.stringify(responseCreate));
+            break;
         }
       };
 

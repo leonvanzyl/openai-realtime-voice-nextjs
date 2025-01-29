@@ -14,6 +14,21 @@ export async function POST() {
           model: process.env.NEXT_PUBLIC_OPENAI_REALTIME_MODEL!,
           voice: process.env.NEXT_PUBLIC_OPENAI_REALTIME_VOICE!,
           instructions: "You are a helpful assistant called Verse",
+          tools: [
+            {
+              type: "function",
+              name: "get_weather",
+              description: "Gets the current weather in a given location.",
+              parameters: {
+                type: "object",
+                properties: {
+                  location: { type: "string" },
+                },
+                required: ["location"],
+              },
+            },
+          ],
+          tool_choice: "auto",
         }),
       }
     );
